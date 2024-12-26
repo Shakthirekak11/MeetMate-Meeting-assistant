@@ -3,6 +3,7 @@ import os
 from tinytag import TinyTag
 import tempfile
 app = Flask(__name__)
+from werkzeug.utils import secure_filename
 
 # Set upload folder
 app.config['UPLOAD_FOLDER'] = 'uploads/'
@@ -22,6 +23,9 @@ def get_mp3_duration(mp3_file_path):
 def index():
     return render_template('tryhtml.html')
 
+
+
+@app.route('/upload', methods=['POST'])
 def upload_file():
     if 'file' not in request.files:
         return 'No file part', 400
@@ -32,15 +36,18 @@ def upload_file():
         return 'No selected file', 400
     
     if file and allowed_file(file.filename):
+        # Save file temporarily
+        filename = secure_filename(file.filename)
         with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as temp_file:
             file.save(temp_file.name)
 
-            # Get the MP3 file duration
+            # Get MP3 duration
             duration = get_mp3_duration(temp_file.name)
 
-        return render_template('tryhtml.html', duration=duration, filename=file.filename)
+        return render_template('tryhtml.html', duration=duration, filename=filename)
     
     return 'Invalid file type. Only MP3 is allowed.', 400
+
 
 if __name__ == '__main__':
     app.run(debug=True)
